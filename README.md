@@ -1,2 +1,114 @@
-# fsmp-recommender
-Clinical recommendation system for FSMP (Foods for Special Medical Purposes) using a three-route fusion architecture: rule-based safety engine + content-based filtering + LLM explanation layer.
+# 知其禁 · 量其优 · 释其理
+### 基于三路融合架构的特医食品临床智能推荐系统
+
+一句话介绍：这是一个面向**特殊医学用途配方食品（FSMP）**的临床选品推荐系统。输入患者的年龄段和病症，系统会在国内已注册的 182 款产品中，给出**安全合规、量化排序、附带专业解释**的 Top-K 推荐结果。
+
+---
+
+## 这个项目在做什么
+
+FSMP（特医食品）是医生开给"进食受限、消化吸收障碍、代谢紊乱"等患者的处方级营养品。国内已注册 182 款、17 个类别，但：
+
+- 说明书是非结构化 PDF，营养成分、适应人群等关键信息人工比对费时费力；
+- 临床禁忌复杂（例如已确诊牛奶蛋白过敏的婴儿绝不能用部分水解配方），选错可能造成严重后果；
+- 不仅要知道"推荐哪款"，更要知道"为什么推荐"。
+
+本项目用三层架构解决这个问题：
+
+```
+用户输入（年龄段 + 病症 + 自然语言描述）
+        │
+        ▼
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│  Route A     │────▶│  Route B     │────▶│  Route C     │
+│ 临床规则引擎  │     │ CBF量化排序  │     │ LLM解释生成层│
+│ 安全硬约束    │     │ 余弦相似度   │     │ 重排序+推荐理由│
+└─────────────┘     └─────────────┘     └─────────────┘
+   规则保安全           算法做排序          语言给解释
+```
+
+- **Route A（临床规则引擎）**：内置 11 条循证规则（依据 GB 29922-2013、GB 25596-2010、ESPGHAN 2022、ESPEN 2019 等），把禁忌产品**物理剔除**出候选池，不是打标记、是真删除——这是系统安全性的底线。
+- **Route B（CBF 量化排序引擎）**：把每款产品编码成营养成分 + 类别 + 适用人群等特征向量，用余弦相似度做细粒度打分（核心矩阵运算基于华为 MindSpore 实现）。
+- **Route C（LLM 解释生成层）**：调用大语言模型对 Top-10 候选做语义重排序，并生成引用具体标准条款的推荐理由，同时输出"AI 复核意见"，指出算法排序可能存在的临床问题。
+
+在 11 个典型临床场景的评测中：**NDCG@5 = 0.924，安全违规率 = 0**。消融实验显示 Route B 使 Precision@5 提升 6.2%，Route C 使 NDCG@5 再提升 4.1%。
+
+---
+
+## 快速体验
+
+项目自带一个静态网页 Demo，把三路架构中"规则匹配 + 特征打分"这部分逻辑用纯前端 JavaScript 复现了一份，内置了几十款代表性产品的真实数据，双击即可运行，不需要装任何环境：
+
+1. 双击打开 `fsmp_recommender (4).html`（任意现代浏览器即可，无需联网、无需后端）
+2. 左侧面板选择患者年龄段（婴儿 / 1-10 岁 / 1 岁以上等）
+3. 勾选病症标签（食物蛋白过敏、乳糖不耐受、肿瘤营养不良……），或直接使用预设的典型病例快捷按钮
+4. 点击"生成推荐"，右侧会按匹配度给出 Top-K 产品卡片，可点开查看营养成分、适应人群、禁忌说明等完整字段
+
+这个网页 Demo 是 Route A + Route B 逻辑的前端复现（不含 LLM 调用），用于直观展示"输入病症 → 拿到安全排序的产品清单"这一核心体验。完整的三路融合系统（含大模型解释层、消融实验、多模型对比）在 Python 后端中实现，见下节。
+
+---
+
+## 跑完整实验（三路融合 + LLM 对比）
+
+后端是纯 Python 脚本流水线，没有 Web Server，按顺序跑脚本即可复现数据处理、统计分析与推荐系统实验。
+
+```bash
+pip install pandas numpy pdfplumber mindspore openai   # 按需替换为实际使用的 LLM SDK
+
+# 1. 数据预处理：从 182 份 PDF 说明书中提取营养成分与结构化字段
+python build_ground_truth.py
+
+# 2. 三路推荐系统核心逻辑
+#    route_a.py            临床规则引擎（安全约束）
+#    route_b_mindspore.py  CBF 量化排序引擎（MindSpore 实现）
+#    route_c.py            LLM 解释生成层
+
+# 3. 跑完整推荐流水线（含 LLM 调用，需在 config.py 配置模型 API Key）
+python run_pipeline_final.py
+
+# 4. 消融实验 / 多模型对比
+python compare_models.py
+python evaluation.py
+
+# 5. 统计图表生成
+python visualize.py
+```
+
+**核心数据资产**：`data/products_final.xlsx`（182 款 × 72 字段，核心营养完整率 100%），由 `pdf_extractor.py` 调用视觉语言模型对全量说明书 PDF 结构化提取而来。
+
+---
+
+## 项目结构一览
+
+```
+fsmp/
+├── fsmp_recommender (4).html   # 前端 Demo（静态单文件，双击即用）
+├── data/
+│   ├── pdfs/                   # 182 份原始产品说明书 PDF
+│   ├── products_final.xlsx     # 结构化数据资产（182×72 字段）
+│   └── result1.xlsx / result2.xlsx  # 数据预处理中间产物
+├── pdf_extractor.py            # PDF 结构化提取
+├── route_a.py                  # Route A：临床规则引擎
+├── route_b_mindspore.py        # Route B：CBF 量化排序引擎（MindSpore）
+├── route_c.py                  # Route C：LLM 解释生成层
+├── llm_providers.py            # 多 LLM 提供商抽象接口（可切换不同模型）
+├── run_pipeline_final.py       # 完整推荐流水线入口
+├── evaluation.py                # 评估指标计算（Precision/Recall/NDCG/安全违规率）
+├── compare_models.py           # 多模型横向对比实验
+├── visualize.py                 # 统计图表生成
+├── test/test_suite.py           # pytest 测试套件
+└── outputs/                     # 图表、实验结果、消融数据
+```
+
+---
+
+## 核心亮点
+
+| 维度 | 结果 |
+|---|---|
+| 数据资产 | 首次对 182 份 FSMP 说明书全量结构化提取，字段从 17 项扩充到 72 项，核心营养完整率 100% |
+| 安全性 | 11 条循证规则覆盖婴儿/成人典型场景，11 个临床场景测试中安全违规率恒为 0 |
+| 排序精度 | 三路融合 NDCG@5 = 0.924；Route B 带来 Precision@5 +6.2%，Route C 带来 NDCG@5 +4.1% |
+| 工程质量 | 32 个 pytest 测试用例、覆盖率 100%；测试中发现并修复一处禁忌产品泄露的安全 Bug |
+| 国产化实践 | Route B 核心矩阵运算基于华为 MindSpore 实现，验证了 Ascend NPU 加速路径 |
+| 可解释性 | LLM 输出的推荐理由引用具体 GB/ESPGHAN/ESPEN 条款，并附带 AI 复核意见 |
