@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>特医食品智能推荐系统</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Noto+Serif+SC:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #1a1917;
+    --ink-60: rgba(26,25,23,0.6);
+    --ink-30: rgba(26,25,23,0.3);
+    --ink-10: rgba(26,25,23,0.08);
+    --cream: #f5f3ef;
+    --warm: #e8e4dc;
+    --gold: #b5965a;
+    --gold-light: rgba(181,150,90,0.12);
+    --border: rgba(26,25,23,0.12);
+    --radius-sm: 4px;
+    --radius: 8px;
+    --radius-lg: 16px;
+  }
+
+  html { font-size: 17px; scroll-behavior: smooth; }
+
+  body {
+    background: var(--cream);
+    color: var(--ink);
+    font-family: 'Noto Serif SC', serif;
+    font-weight: 400;
+    line-height: 1.75;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  .site-header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: var(--cream);
+    border-bottom: 1px solid var(--border);
+    padding: 0 48px;
+    height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px; font-weight: 600; letter-spacing: 0.04em;
+    color: var(--ink);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .logo-mark {
+    width: 28px; height: 28px;
+    border: 1.5px solid var(--gold);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .logo-mark svg { width: 14px; height: 14px; }
+  .header-meta {
+    font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--ink-60); font-family: 'DM Mono', monospace; font-weight: 500;
+  }
+
+  /* ── MAIN LAYOUT ── */
+  .page {
+    padding-top: 64px;
+    min-height: 100vh;
+  }
+
+  .hero {
+    padding: 80px 48px 64px;
+    border-bottom: 1px solid var(--border);
+    max-width: 900px;
+  }
+  .hero-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--gold); margin-bottom: 20px;
+    font-weight: 500;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .hero-label::before {
+    content: ''; display: block;
+    width: 24px; height: 1px; background: var(--gold);
+  }
+  .hero-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(40px, 5vw, 62px);
+    font-weight: 600; line-height: 1.12;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    margin-bottom: 20px;
+  }
+  .hero-desc {
+    font-size: 16px; color: var(--ink-60);
+    max-width: 520px; line-height: 1.85;
+    font-weight: 400;
+  }
+
+  /* ── CONTENT AREA ── */
+  .content-wrap {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    min-height: calc(100vh - 64px);
+    align-items: start;
+  }
+
+  /* ── FORM PANEL ── */
+  .form-panel {
+    padding: 48px;
+    border-right: 1px solid var(--border);
+    position: sticky; top: 64px;
+    max-height: calc(100vh - 64px);
+    overflow-y: auto;
+  }
+
+  .section-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--ink); font-weight: 500; margin-bottom: 28px;
+  }
+
+  .field-group { margin-bottom: 28px; }
+
+  .field-label {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; letter-spacing: 0.06em;
+    color: var(--ink); margin-bottom: 10px;
+    font-family: 'DM Mono', monospace; font-weight: 500;
+  }
+  .field-label svg { width: 14px; height: 14px; color: var(--gold); flex-shrink: 0; }
+
+  .field-select, .field-input {
+    width: 100%;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 13px 16px;
+    font-size: 15px; color: var(--ink);
+    font-family: 'Noto Serif SC', serif; font-weight: 500;
+    appearance: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+  }
+  .field-select:focus, .field-input:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px var(--gold-light);
+  }
+  .select-wrap { position: relative; }
+  .select-wrap::after {
+    content: '';
+    position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+    width: 8px; height: 5px;
+    background: var(--ink-60);
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+    pointer-events: none;
+  }
+
+  /* Tags for conditions */
+  .tags-grid {
+    display: flex; flex-wrap: wrap; gap: 8px;
+  }
+  .tag-btn {
+    padding: 8px 16px;
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    background: transparent;
+    font-size: 13px; color: var(--ink);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.18s;
+    font-family: 'Noto Serif SC', serif;
+    white-space: nowrap;
+  }
+  .tag-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .tag-btn.active {
+    background: var(--ink); border-color: var(--ink);
+    color: #fff;
+  }
+
+  .divider {
+    height: 1px; background: var(--border);
+    margin: 32px 0;
+  }
+
+  /* Quick presets */
+  .preset-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--ink-60); font-weight: 500; margin-bottom: 12px;
+  }
+  .preset-btn {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%; padding: 12px 14px;
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    background: transparent; cursor: pointer;
+    text-align: left;
+    transition: all 0.18s;
+    margin-bottom: 8px;
+  }
+  .preset-btn:hover { background: var(--gold-light); border-color: var(--gold); }
+  .preset-icon {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--warm);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .preset-icon svg { width: 14px; height: 14px; }
+  .preset-text { font-size: 14px; color: var(--ink); font-weight: 500; }
+  .preset-sub { font-size: 12px; color: var(--ink-60); margin-top: 2px; font-weight: 400; }
+
+  .submit-btn {
+    width: 100%; margin-top: 8px;
+    padding: 17px;
+    background: var(--ink);
+    border: none; border-radius: var(--radius-sm);
+    color: #fff;
+    font-size: 14px; letter-spacing: 0.14em;
+    font-family: 'DM Mono', monospace; font-weight: 500;
+    cursor: pointer;
+    transition: all 0.22s;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  .submit-btn:hover { background: #2e2c29; }
+  .submit-btn:active { transform: scale(0.99); }
+  .submit-btn svg { width: 15px; height: 15px; }
+
+  /* ── RESULTS PANEL ── */
+  .results-panel {
+    padding: 48px;
+  }
+
+  /* Empty state */
+  .empty-state {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; padding: 80px 40px; text-align: center;
+    color: var(--ink-30);
+  }
+  .empty-state-icon {
+    width: 64px; height: 64px;
+    border: 1px dashed var(--ink-30); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 24px;
+  }
+  .empty-state-icon svg { width: 28px; height: 28px; }
+  .empty-state h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 24px; font-weight: 300; color: var(--ink-60);
+    margin-bottom: 8px;
+  }
+  .empty-state p { font-size: 13px; line-height: 1.7; max-width: 280px; }
+
+  /* Results header */
+  .results-header {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    margin-bottom: 32px; padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .results-count {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 42px; font-weight: 600;
+    line-height: 1;
+  }
+  .results-count span {
+    font-size: 13px; font-family: 'DM Mono', monospace;
+    color: var(--ink-60); font-weight: 500;
+    display: block; margin-top: 6px; letter-spacing: 0.06em;
+  }
+  .results-patient {
+    text-align: right;
+    font-size: 13px; color: var(--ink-60);
+    font-family: 'DM Mono', monospace; font-weight: 400;
+  }
+  .results-patient strong {
+    display: block; color: var(--ink);
+    font-size: 15px; margin-bottom: 4px; font-weight: 500;
+  }
+
+  /* Sort bar */
+  .sort-bar {
+    display: flex; gap: 4px; margin-bottom: 24px;
+    align-items: center;
+  }
+  .sort-label {
+    font-size: 12px; letter-spacing: 0.08em; color: var(--ink-60);
+    font-family: 'DM Mono', monospace; font-weight: 500; margin-right: 8px;
+  }
+  .sort-btn {
+    padding: 7px 14px; border: 1px solid var(--border);
+    border-radius: 100px; background: transparent;
+    font-size: 12px; font-family: 'DM Mono', monospace; font-weight: 500;
+    color: var(--ink); cursor: pointer;
+    transition: all 0.15s;
+  }
+  .sort-btn.active { background: var(--ink); border-color: var(--ink); color: #fff; }
+
+  /* Product card */
+  .card-list { display: flex; flex-direction: column; gap: 16px; }
+
+  .product-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    transition: all 0.22s;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+  .product-card::before {
+    content: '';
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: transparent;
+    transition: background 0.22s;
+  }
+  .product-card:hover { border-color: rgba(181,150,90,0.4); box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
+  .product-card:hover::before { background: var(--gold); }
+  .product-card.rank-1::before { background: var(--gold); }
+  .product-card.rank-2::before { background: var(--ink-30); }
+  .product-card.rank-3::before { background: var(--ink-10); }
+
+  .card-top {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    gap: 16px; margin-bottom: 14px;
+  }
+  .card-name {
+    font-size: 18px; font-weight: 700; line-height: 1.4;
+    color: var(--ink); flex: 1;
+  }
+  .card-rank {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 32px; font-weight: 600;
+    color: var(--ink-30); line-height: 1;
+    flex-shrink: 0;
+  }
+  .rank-1 .card-rank { color: var(--gold); }
+
+  .card-reg {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px; letter-spacing: 0.1em;
+    color: var(--ink-60); font-weight: 500; margin-bottom: 14px;
+  }
+
+  .card-badges {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    margin-bottom: 16px;
+  }
+  .badge {
+    padding: 4px 11px; border-radius: 100px;
+    font-size: 12px; font-family: 'DM Mono', monospace;
+    letter-spacing: 0.04em; font-weight: 500;
+    border: 1px solid;
+  }
+  .badge-category { border-color: var(--ink-10); color: var(--ink-60); background: var(--ink-10); }
+  .badge-protein { border-color: rgba(181,150,90,0.3); color: var(--gold); background: var(--gold-light); }
+  .badge-lactose { border-color: rgba(80,160,100,0.3); color: #4a9460; background: rgba(80,160,100,0.08); }
+  .badge-allergy { border-color: rgba(200,80,60,0.3); color: #c8503c; background: rgba(200,80,60,0.08); }
+
+  .card-body { font-size: 14px; color: var(--ink-60); line-height: 1.75; margin-bottom: 16px; font-weight: 400; }
+
+  .card-footer {
+    display: flex; gap: 24px; flex-wrap: wrap;
+    padding-top: 16px; border-top: 1px solid var(--border);
+  }
+  .card-stat {
+    display: flex; flex-direction: column; gap: 3px;
+  }
+  .card-stat-label {
+    font-size: 11px; font-family: 'DM Mono', monospace;
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-60);
+    font-weight: 500;
+  }
+  .card-stat-value { font-size: 14px; color: var(--ink); font-weight: 500; }
+
+  /* Score bar */
+  .score-row { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .score-bar {
+    flex: 1; height: 4px; background: var(--ink-10);
+    border-radius: 100px; overflow: hidden;
+  }
+  .score-fill { height: 100%; background: var(--gold); border-radius: 100px; }
+  .score-num {
+    font-family: 'DM Mono', monospace; font-size: 13px;
+    color: var(--ink); font-weight: 500; width: 36px; text-align: right;
+    flex-shrink: 0;
+  }
+  .score-label { font-size: 12px; color: var(--ink); font-weight: 500; width: 50px; flex-shrink: 0; }
+
+  /* Loading */
+  .loading {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 80px; gap: 20px;
+  }
+  .spinner {
+    width: 36px; height: 36px;
+    border: 1.5px solid var(--border);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Notice */
+  .notice {
+    padding: 14px 16px;
+    background: var(--gold-light);
+    border: 1px solid rgba(181,150,90,0.25);
+    border-radius: var(--radius-sm);
+    font-size: 13px; color: var(--ink); font-weight: 400;
+    display: flex; gap: 10px; align-items: flex-start;
+    margin-bottom: 24px;
+  }
+  .notice svg { width: 15px; height: 15px; color: var(--gold); flex-shrink: 0; margin-top: 2px; }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(26,25,23,0.5);
+    backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--cream); border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    max-width: 640px; width: 100%;
+    max-height: 80vh; overflow-y: auto;
+    padding: 40px;
+    transform: translateY(10px);
+    transition: transform 0.25s;
+  }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal-close {
+    position: sticky; top: 0; float: right;
+    width: 32px; height: 32px;
+    border: 1px solid var(--border); border-radius: 50%;
+    background: var(--cream);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 16px; color: var(--ink-60);
+    transition: all 0.15s;
+    z-index: 1;
+  }
+  .modal-close:hover { background: var(--warm); }
+  .modal-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 32px; font-weight: 600;
+    margin-bottom: 8px; margin-right: 40px; line-height: 1.25;
+  }
+  .modal-reg {
+    font-family: 'DM Mono', monospace; font-size: 12px;
+    color: var(--ink-60); font-weight: 500; margin-bottom: 24px; letter-spacing: 0.08em;
+  }
+  .modal-section { margin-bottom: 24px; }
+  .modal-section-title {
+    font-family: 'DM Mono', monospace; font-size: 11px;
+    letter-spacing: 0.18em; text-transform: uppercase; font-weight: 500;
+    color: var(--gold); margin-bottom: 10px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .modal-section-title::after {
+    content: ''; flex: 1; height: 1px; background: rgba(181,150,90,0.2);
+  }
+  .modal-text { font-size: 15px; color: var(--ink); line-height: 1.85; font-weight: 400; }
+  .modal-stats {
+    display: grid; grid-template-columns: repeat(3,1fr); gap: 16px;
+    margin: 24px 0; padding: 20px; background: #fff;
+    border: 1px solid var(--border); border-radius: var(--radius);
+  }
+  .modal-stat-item { text-align: center; }
+  .modal-stat-n {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 32px; font-weight: 600; color: var(--ink);
+    line-height: 1;
+  }
+  .modal-stat-u { font-size: 12px; color: var(--ink-60); font-weight: 400; }
+  .modal-stat-l {
+    font-size: 11px; font-family: 'DM Mono', monospace; font-weight: 500;
+    color: var(--ink-60); letter-spacing: 0.1em; text-transform: uppercase;
+    margin-top: 5px;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  @media (max-width: 900px) {
+    .site-header { padding: 0 24px; }
+    .hero { padding: 48px 24px 40px; }
+    .content-wrap { grid-template-columns: 1fr; }
+    .form-panel { border-right: none; border-bottom: 1px solid var(--border); position: static; }
+    .form-panel, .results-panel { padding: 32px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="site-header">
+  <div class="logo">
+    <div class="logo-mark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--gold)">
+        <path d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
+      </svg>
+    </div>
+    特医食品推荐
+  </div>
+  <div class="header-meta">FSMP Intelligent Advisory · 182 Products</div>
+</header>
+
+<div class="page">
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-label">临床营养决策支持</div>
+    <h1 class="hero-title">特殊医学用途<br>食品智能推荐</h1>
+    <p class="hero-desc">基于 182 款已注册特医食品数据库，结合患者年龄段、症状及禁忌，精准筛选最适配方。</p>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content-wrap">
+
+    <!-- FORM PANEL -->
+    <aside class="form-panel">
+      <div class="section-title">患者信息输入</div>
+
+      <div class="field-group">
+        <div class="field-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+          </svg>
+          年龄段
+        </div>
+        <div class="select-wrap">
+          <select class="field-select" id="ageGroup">
+            <option value="">请选择年龄段</option>
+            <option value="infant">婴儿（0 ~ 12 月龄）</option>
+            <option value="child_1_10">儿童（1 ~ 10 岁）</option>
+            <option value="child_10_plus">儿童青少年（10 岁以上）</option>
+            <option value="preterm">早产 / 低出生体重婴儿</option>
+            <option value="adult_50plus">成人（50 岁以上）</option>
+            <option value="adult">成人（18 岁以上）</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+          </svg>
+          症状 / 需求（可多选）
+        </div>
+        <div class="tags-grid" id="conditionTags">
+          <button class="tag-btn" data-val="protein_allergy">蛋白质过敏</button>
+          <button class="tag-btn" data-val="lactose_intolerant">乳糖不耐受</button>
+          <button class="tag-btn" data-val="need_protein">补充蛋白质</button>
+          <button class="tag-btn" data-val="poor_nutrition">营养不良</button>
+          <button class="tag-btn" data-val="dehydration">脱水/腹泻</button>
+          <button class="tag-btn" data-val="preop">术前补充</button>
+          <button class="tag-btn" data-val="swallowing">吞咽障碍</button>
+          <button class="tag-btn" data-val="tumor">肿瘤患者</button>
+          <button class="tag-btn" data-val="pku">苯丙酮尿症</button>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+          </svg>
+          特殊说明（选填）
+        </div>
+        <input class="field-input" id="extraNote" type="text" placeholder="例：管饲喂养、高蛋白需求……">
+      </div>
+
+      <div class="divider"></div>
+
+      <button class="submit-btn" onclick="doRecommend()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+        开始智能推荐
+      </button>
+    </aside>
+
+    <!-- RESULTS PANEL -->
+    <main class="results-panel" id="resultsPanel">
+      <div class="empty-state" id="emptyState">
+        <div class="empty-state-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+            <path d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
+          </svg>
+        </div>
+        <h3>等待查询</h3>
+        <p>请在左侧填写患者信息，点击推荐后查看筛选结果。</p>
+      </div>
+      <div id="resultsContent" style="display:none"></div>
+    </main>
+
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal" id="modalBody">
+    <button class="modal-close" onclick="closeModal()">&times;</button>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<script>
+// ── PRODUCT DATA ──────────────────────────────────────────────────────────────
+const PRODUCTS = JSON.parse(`[{"reg_no": "国食注字TY20175001", "product_name": "特殊医学用途婴儿氨基酸配方食品", "company": "", "category": "氨基酸配方", "population": "食物蛋白过敏婴儿", "lactose_free": true, "protein_source": "氨基酸", "formula_feature": "不含食物蛋白，蛋白质全部由氨基酸提供，添加中链甘油三酯、DHA、AA和核苷酸，无乳糖。", "contraindications": "不适用于非目标人群，禁止用于肠外营养支持和静脉注射。", "special_additions": "胆碱、牛磺酸、左旋肉碱、DHA、AA、核苷酸", "energy_density": 1.34, "nut_protein_g": 2.0, "nut_energy_kJ": 279.0, "net_weight": "400 克", "admin_route": "口服"}, {"reg_no": "国食注字TY20175002", "product_name": "特殊医学用途婴儿乳蛋白部分水解配方粉", "company": "雅培亲护", "category": "乳蛋白部分水解配方", "population": "0～12月龄乳蛋白过敏高风险婴儿", "lactose_free": true, "protein_source": "水解乳清蛋白粉", "formula_feature": "乳蛋白部分水解，降低过敏风险，易消化，含胆碱、叶黄素、核苷酸、DHA。", "contraindications": "仅适用于乳蛋白过敏高风险婴儿，需在医生或营养师指导下使用。", "special_additions": "胆碱、叶黄素、核苷酸、二十二碳六烯酸", "energy_density": 0.65, "nut_protein_g": 1.56, "nut_energy_kJ": 285.0, "net_weight": "360克，820克", "admin_route": "口服"}, {"reg_no": "国食注字TY20175003", "product_name": "特殊医学用途婴儿乳蛋白部分水解配方粉", "company": "", "category": "乳蛋白部分水解配方", "population": "0-12月龄乳蛋白过敏高风险婴儿", "lactose_free": false, "protein_source": "水解乳清蛋白粉", "formula_feature": "乳蛋白部分水解配方，降低婴儿乳蛋白过敏风险，含DHA、胆碱、叶黄素。", "contraindications": "仅适用于0-12月龄乳蛋白过敏高风险婴儿，不能作为普通婴儿配方奶粉替代品。", "special_additions": "胆碱、牛磺酸、左旋肉碱、DHA、叶黄素", "energy_density": 0.0, "nut_protein_g": 1.56, "nut_energy_kJ": 286.0, "net_weight": "", "admin_route": "口服"}, {"reg_no": "国食注字TY20180001", "product_name": "特殊医学用途婴儿无乳糖配方食品 贝因美", "company": "", "category": "无乳糖配方", "population": "0～12月龄乳糖不耐受婴儿", "lactose_free": true, "protein_source": "乳蛋白", "formula_feature": "适用于乳糖不耐受婴儿的无乳糖配方食品，乳糖含量<0.5g/100g，蛋白质由乳蛋白提供。", "contraindications": "请在医生或临床营养师指导下使用。", "special_additions": "胆碱、牛磺酸、左旋肉碱、低聚果糖、酪蛋白磷酸肽", "energy_density": 0.65, "nut_protein_g": 1.2, "nut_energy_kJ": 214.4, "net_weight": "400g", "admin_route": "口服"}, {"reg_no": "国食注字TY20180002", "product_name": "特殊医学用途电解质配方食品 乐赋", "company": "", "category": "非全营养配方食品", "population": "10岁以上因腹泻等原因导致轻至中度脱水需要补充水及电解质的人群。", "lactose_free": false, "protein_source": "", "formula_feature": "含葡萄糖、钠、钾、氯、镁、磷等电解质，用于轻中度脱水补液。", "contraindications": "不适用于10岁以下人群、吞咽障碍、胃肠动力障碍、肾功能衰竭等患者。", "special_additions": "", "energy_density": 0.0103, "nut_protein_g": 0.0, "nut_energy_kJ": 43.0, "net_weight": "350mL、500mL", "admin_route": "口服"}, {"reg_no": "国食注字TY20185001", "product_name": "特殊医学用途婴儿氨基酸代谢障碍配方食品", "company": "", "category": "氨基酸代谢障碍配方", "population": "0～12月龄苯丙酮尿症婴儿", "lactose_free": true, "protein_source": "L-亮氨酸等多种氨基酸", "formula_feature": "不添加苯丙氨酸的特殊医学用途婴儿配方粉，适用于0～12月龄苯丙酮尿症婴儿。", "contraindications": "请在医生或者临床营养师指导下使用。", "special_additions": "胆碱、牛磺酸、左旋肉碱、DHA、AA", "energy_density": 1.3, "nut_protein_g": 1.8, "nut_energy_kJ": 279.0, "net_weight": "400g", "admin_route": "口服"}, {"reg_no": "国食注字TY20185002", "product_name": "特殊医学用途婴儿乳蛋白部分水解配方粉", "company": "", "category": "乳蛋白部分水解配方", "population": "0～12月龄乳蛋白过敏高风险婴儿", "lactose_free": false, "protein_source": "水解牛奶蛋白", "formula_feature": "以水解牛奶蛋白为蛋白质来源，经加工分解成小分子乳蛋白、肽段和氨基酸，适用于乳蛋白过敏高风险婴儿。", "contraindications": "仅适用于0-12月龄乳蛋白过敏高风险婴儿，需在医生或临床营养师指导下使用。", "special_additions": "胆碱、牛磺酸、左旋肉碱、二十二碳六烯酸、花生四烯酸", "energy_density": 0.68, "nut_protein_g": 1.54, "nut_energy_kJ": 284.0, "net_weight": "370g，400g，850g", "admin_route": "口服"}, {"reg_no": "国食注字TY20185003", "product_name": "喜康宝贝初", "company": "", "category": "早产/低出生体重婴儿配方", "population": "早产/低出生体重婴儿", "lactose_free": false, "protein_source": "脱脂奶粉、浓缩乳清蛋白粉", "formula_feature": "高能量密度配方，含中链甘油三酯，支持早产儿追赶生长。", "contraindications": "禁止肠外营养支持和静脉注射，非目标人群禁用。", "special_additions": "胆碱、牛磺酸、左旋肉碱、DHA、ARA", "energy_density": 0.68, "nut_protein_g": 2.04, "nut_energy_kJ": 284.0, "net_weight": "48×59 mL", "admin_route": "口服或管饲"}, {"reg_no": "国食注字TY20185004", "product_name": "特殊医学用途早产/低出生体重婴儿配方奶", "company": "", "category": "早产/低出生体重婴儿配方", "population": "早产/低出生体重婴儿", "lactose_free": false, "protein_source": "浓缩乳清蛋白粉", "formula_feature": "高能量密度，含中链甘油三酯，支持早产儿追赶生长。", "contraindications": "禁止用于肠外营养支持和静脉注射，勿用微波炉加热。", "special_additions": "胆碱、牛磺酸、左旋肉碱、DHA、ARA", "energy_density": 0.81, "nut_protein_g": 2.43, "nut_energy_kJ": 339.0, "net_weight": "48×59mL", "admin_route": "口服或管饲"}, {"reg_no": "国食注字TY20185005", "product_name": "特殊医学用途婴儿无乳糖配方粉", "company": "", "category": "无乳糖配方", "population": "0～12月龄乳糖不耐受婴儿", "lactose_free": true, "protein_source": "浓缩牛奶蛋白", "formula_feature": "无乳糖配方，以其他碳水化合物替代乳糖，采用牛奶蛋白作为蛋白质来源，适用于乳糖不耐受婴儿。", "contraindications": "请在医生或者临床营养师指导下使用。", "special_additions": "胆碱、牛磺酸、左旋肉碱", "energy_density": 0.65, "nut_protein_g": 0.5, "nut_energy_kJ": 100.0, "net_weight": "400克", "admin_route": "口服"}, {"reg_no": "国食注字TY20185006", "product_name": "早瑞能恩", "company": "", "category": "早产/低出生体重婴儿配方", "population": "早产/低出生体重婴儿", "lactose_free": false, "protein_source": "乳清蛋白粉", "formula_feature": "含中链甘油三酯（MCT），中链脂肪约占总脂肪27%，适合早产/低出生体重婴儿营养需求。", "contraindications": "禁用于乳糖不耐受、半乳糖血症、葡萄糖半乳糖吸收不良或对牛奶蛋白过敏者。", "special_additions": "胆碱、牛磺酸、左旋肉碱、DHA、ARA", "energy_density": 0.8, "nut_protein_g": 2.32, "nut_energy_kJ": 336.0, "net_weight": "400g", "admin_route": "口服"}, {"reg_no": "国食注字TY20185007", "product_name": "小安素® PediaSure®", "company": "", "category": "全营养配方食品", "population": "消化吸收不足造成营养不良的1～10岁人群。", "lactose_free": false, "protein_source": "浓缩牛奶蛋白粉，大豆分离蛋白粉", "formula_feature": "含3种优质动植物蛋白、MCT、可溶性膳食纤维及27种维生素矿物质，满足1-10岁儿童营养需求。", "contraindications": "请在医生或临床营养师指导下使用。", "special_additions": "胆碱、牛磺酸、左旋肉碱", "energy_density": 1.0, "nut_protein_g": 2.67, "nut_energy_kJ": 342.0, "net_weight": "38.8g, 400g, 900g", "admin_route": "口服"}, {"reg_no": "国食注字TY20185009", "product_name": "特殊医学用途早产/低出生体重婴儿配方粉", "company": "", "category": "早产/低出生体重婴儿配方", "population": "早产/低出生体重婴儿", "lactose_free": false, "protein_source": "脱脂奶粉、浓缩乳清蛋白粉", "formula_feature": "适用于早产/低出生体重婴儿，提供追赶生长所需能量、蛋白质、维生素和矿物质，含核苷酸、DHA、ARA及叶黄素。", "contraindications": "需在医生或临床营养师指导下使用，不适用于非早产/低出生体重婴儿。", "special_additions": "核苷酸、DHA、ARA、叶黄素、胆碱、牛磺酸、左旋肉碱", "energy_density": 0.65, "nut_protein_g": 1.95, "nut_energy_kJ": 311.0, "net_weight": "370g", "admin_route": "口服"}, {"reg_no": "国食注字TY20185010", "product_name": "纽荃星", "company": "", "category": "早产/低出生体重婴儿配方", "population": "早产/低出生体重婴儿", "lactose_free": true, "protein_source": "浓缩乳清蛋白粉", "formula_feature": "采用中链脂肪作为脂肪部分来源，添加DHA、AA、核苷酸、低聚半乳糖和多聚果糖，能量密度100kcal/100mL。", "contraindications": "不适用于非目标人群，禁止肠外营养支持和静脉注射，配制不当可能引起健康危害。", "special_additions": "胆碱、牛磺酸、DHA、AA、核苷酸、低聚半乳糖", "energy_density": 1.0, "nut_protein_g": 2.62, "nut_energy_kJ": 418.0, "net_weight": "400g", "admin_route": "口服"}, {"reg_no": "国食注字TY20185011", "product_name": "纽贝臻 Periflex Ad.", "company": "", "category": "非全营养配方食品", "population": "10岁以上苯丙酮尿症人群", "lactose_free": true, "protein_source": "氨基酸（不含苯丙氨酸）", "formula_feature": "适用于10岁以上苯丙酮尿症人群，添加了氨基酸（不含苯丙氨酸）、碳水化合物、脂肪、维生素、矿物质等。", "contraindications": "禁止用于肠外营养支持和静脉注射，不可作为单一蛋白质来源使用，不适用于非目标人群。", "special_additions": "胆碱、牛磺酸、左旋肉碱", "energy_density": 1.0, "nut_protein_g": 9.6, "nut_energy_kJ": 417.0, "net_weight": "400g", "admin_route": "口服"}, {"reg_no": "国食注字TY20185012", "product_name": "特殊医学用途婴儿乳蛋白深度水解配方食品 蔼儿舒", "company": "", "category": "乳蛋白深度水解配方", "population": "0～12月龄食物蛋白过敏婴儿", "lactose_free": true, "protein_source": "乳清蛋白粉", "formula_feature": "通过水解工艺将大分子乳蛋白水解成肽和氨基酸，添加中链甘油三酯和核苷酸，未添加乳糖，为乳蛋白过敏婴儿提供营养支持。", "contraindications": "未经医生指导，不要给婴儿其他食品。6月龄以上特殊医学状况婴儿食用本品时，应在医生指导下进行。", "special_additions": "胆碱、牛磺酸、左旋肉碱、DHA、核苷酸", "energy_density": 0.0, "nut_protein_g": 1.82, "nut_energy_kJ": 284.0, "net_weight": "", "admin_route": "口服"}, {"reg_no": "国食注字TY20185013", "product_name": "喜康宝贝添", "company": "", "category": "母乳营养补充剂", "population": "早产/低出生体重婴儿", "lactose_free": false, "protein_source": "浓缩乳清蛋白粉", "formula_feature": "补充早产/低出生体重婴儿母乳营养素不足，含优质蛋白、MCT、多种维生素和矿物质。", "contraindications": "不可作为唯一营养来源，不适用于非目标人群，禁止用于肠外营养支持和静脉注射。", "special_additions": "维生素A/D/E/K/B族、矿物质", "energy_density": 0.7, "nut_protein_g": 0.25, "nut_energy_kJ": 14.75, "net_weight": "45g（0.9g × 50）", "admin_route": "口服/管饲"}, {"reg_no": "国食注字TY20190001", "product_name": "佳膳佳立畅", "company": "", "category": "全营养配方食品", "population": "适用于10岁以上进食受限、消化吸收障碍、代谢紊乱需要补充营养的人群。", "lactose_free": true, "protein_source": "酪蛋白酸钙", "formula_feature": "全营养特医食品，能量密度约1.2kcal/mL，含膳食纤维，无乳糖，可作为单一营养来源。", "contraindications": "禁止用于肠外营养支持和静脉注射，不适用于非目标人群。", "special_additions": "胆碱", "energy_density": 1.2, "nut_protein_g": 4.0, "nut_energy_kJ": 496.0, "net_weight": "250mL，500mL", "admin_route": "口服/管饲"}, {"reg_no": "国食注字TY20190003", "product_name": "特殊医学用途全营养配方粉", "company": "伊利 欣活", "category": "全营养配方食品", "population": "适用于10岁以上进食受限、消化吸收障碍、代谢紊乱需要补充营养的人群。", "lactose_free": false, "protein_source": "浓缩牛奶蛋白、乳清蛋白粉", "formula_feature": "为10岁以上进食受限、消化吸收障碍、代谢紊乱人群设计的全营养配方粉，可作为单一营养来源。", "contraindications": "不适用于非目标人群、半乳糖血症患者，禁止肠外营养和静脉注射。", "special_additions": "胆碱、牛磺酸、β-胡萝卜素", "energy_density": 1.0, "nut_protein_g": 4.0, "nut_energy_kJ": 418.0, "net_weight": "800g", "admin_route": "口服"}, {"reg_no": "国食注字TY20190007", "product_name": "力存优太", "company": "", "category": "全营养配方食品", "population": "适用于10岁以上因进食受限、消化吸收障碍、代谢紊乱需补充营养的人群。", "lactose_free": false, "protein_source": "水解乳清蛋白", "formula_feature": "针对10岁以上营养不良人群的全营养配方，含MCT和水解乳清蛋白，可作为单一营养来源。", "contraindications": "不适用于非目标人群，禁止肠外营养和静脉注射。", "special_additions": "胆碱、牛磺酸、叶酸、维生素K1", "energy_density": 1.0, "nut_protein_g": 0.9, "nut_energy_kJ": 100.0, "net_weight": "400g", "admin_route": "口服或管饲"}, {"reg_no": "国食注字TY20195004", "product_name": "小佰太能", "company": "", "category": "全营养配方食品", "population": "1-10岁因进食受限、消化吸收障碍、代谢紊乱等需要补充营养的人群。", "lactose_free": true, "protein_source": "乳清蛋白", "formula_feature": "全营养配方，含乳清蛋白、MCT、多种维生素矿物质，适合1-10岁儿童营养补充。", "contraindications": "禁止肠外营养和静脉注射，不适用于非目标人群，配制不当可能引起健康危害。", "special_additions": "胆碱、牛磺酸、左旋肉碱", "energy_density": 1.0, "nut_protein_g": 3.014, "nut_energy_kJ": 429.0, "net_weight": "400 g", "admin_route": "口服或管饲"}, {"reg_no": "国食注字TY20195005", "product_name": "全安素", "company": "", "category": "全营养配方食品", "population": "10岁以上进食受限、消化吸收障碍、代谢紊乱等需要补充营养的人群。", "lactose_free": false, "protein_source": "乳分离蛋白、酪蛋白酸钙和大豆分离蛋白", "formula_feature": "含乳分离蛋白、大豆分离蛋白及多种维生素矿物质，添加膳食纤维，可作为单一营养来源。", "contraindications": "不适用于非目标人群及半乳糖血症病人，禁止肠外营养支持和静脉注射。", "special_additions": "胆碱、β-胡萝卜素", "energy_density": 1.0, "nut_protein_g": 0.88, "nut_energy_kJ": 100.0, "net_weight": "400g, 900g", "admin_route": "口服或管饲"}, {"reg_no": "国食注字TY20195006", "product_name": "小佳膳", "company": "", "category": "全营养配方食品", "population": "1～10岁进食受限、消化吸收障碍、代谢紊乱等需要补充营养的人群。", "lactose_free": false, "protein_source": "乳清蛋白", "formula_feature": "全营养配方，含乳清蛋白、中链甘油三酯、牛磺酸、左旋肉碱及膳食纤维，能量密度1kcal/mL。", "contraindications": "禁止肠外营养和静脉注射，不适用于非目标人群，需在医生指导下使用。", "special_additions": "牛磺酸、左旋肉碱、DHA、膳食纤维", "energy_density": 1.0, "nut_protein_g": 3.1, "nut_energy_kJ": 427.0, "net_weight": "400克", "admin_route": "口服或管饲"}, {"reg_no": "国食注字TY20195009", "product_name": "爱思诺赋儿嘉", "company": "", "category": "无乳糖配方", "population": "0～12月龄乳糖不耐受婴儿", "lactose_free": true, "protein_source": "乳蛋白", "formula_feature": "无乳糖配方，适用于乳糖不耐受婴儿，以其他碳水化合物完全代替乳糖。", "contraindications": "不适用于非目标人群，禁止肠外营养支持和静脉注射，配制不当可能引起健康危害。", "special_additions": "胆碱、牛磺酸、左旋肉碱、DHA、ARA", "energy_density": 0.0, "nut_protein_g": 1.54, "nut_energy_kJ": 288.0, "net_weight": "400g", "admin_route": "口服"}, {"reg_no": "国食注字TY20195010", "product_name": "特殊医学用途婴儿乳蛋白深度水解配方食品 肽敏舒", "company": "", "category": "乳蛋白深度水解配方", "population": "0～12月龄食物蛋白过敏婴儿", "lactose_free": false, "protein_source": "乳清蛋白粉", "formula_feature": "通过水解工艺将大分子乳蛋白水解成肽和氨基酸，适用于食物蛋白过敏婴儿的单一营养来源。", "contraindications": "禁用于乳糖不耐受、半乳糖血症、乳糖吸收不良及慢性腹泻婴儿，不适用于非目标人群。", "special_additions": "胆碱、牛磺酸、左旋肉碱、DHA、ARA", "energy_density": 0.0, "nut_protein_g": 1.7, "nut_energy_kJ": 280.0, "net_weight": "400g", "admin_route": "口服"}, {"reg_no": "国食注字TY20195012", "product_name": "纽贝福 Periflex", "company": "", "category": "非全营养配方食品", "population": "1～10岁苯丙酮尿症人群", "lactose_free": true, "protein_source": "氨基酸（除苯丙氨酸）", "formula_feature": "适用于1～10岁苯丙酮尿症人群，含氨基酸（除苯丙氨酸）、碳水化合物、脂肪、维生素、矿物质等营养素。", "contraindications": "禁止肠外营养支持和静脉注射，不可作为单一蛋白质来源，不适用于非目标人群。", "special_additions": "胆碱、牛磺酸、左旋肉碱、肌醇", "energy_density": 100.0, "nut_protein_g": 7.0, "nut_energy_kJ": 408.0, "net_weight": "400g", "admin_route": "口服"}, {"reg_no": "国食注字TY20200001", "product_name": "爱优诺优益力", "company": "", "category": "全营养配方食品", "population": "适用于1～10岁进食受限、消化吸收障碍、代谢紊乱需要补充营养的人群", "lactose_free": true, "protein_source": "浓缩牛奶蛋白、乳清蛋白粉", "formula_feature": "提供25种维生素和矿物质，添加膳食纤维及牛磺酸，可作为单一营养来源。", "contraindications": "不适用于非目标人群，禁止肠外营养支持和静脉注射。", "special_additions": "牛磺酸", "energy_density": 1.0, "nut_protein_g": 1.78, "nut_energy_kJ": 188.6, "net_weight": "400克，800克", "admin_route": "口服"}, {"reg_no": "国食注字TY20200006", "product_name": "特殊医学用途婴儿乳蛋白部分水解配方食品 舒力乐", "company": "", "category": "乳蛋白部分水解配方", "population": "0～12月龄乳蛋白过敏高风险婴儿", "lactose_free": true, "protein_source": "水解乳清蛋白粉、乳铁蛋白", "formula_feature": "为乳蛋白过敏高风险婴儿设计，乳蛋白部分水解，满足0-6月龄生长发育需求。", "contraindications": "仅适用于乳蛋白过敏高风险婴儿，需在医生或临床营养师指导下使用。", "special_additions": "胆碱、牛磺酸、左旋肉碱、乳铁蛋白、核苷酸", "energy_density": 0.65, "nut_protein_g": 1.2, "nut_energy_kJ": 208.8, "net_weight": "400克", "admin_route": "口服"}, {"reg_no": "国食注字TY20200009", "product_name": "特殊医学用途蛋白质组件配方食品 伊能佳", "company": "", "category": "蛋白质（氨基酸）组件", "population": "10岁以上特定疾病或者医学状况下需要补充蛋白质的人群。", "lactose_free": false, "protein_source": "乳清蛋白粉、大豆分离蛋白", "formula_feature": "以乳清蛋白和大豆分离蛋白为蛋白来源，每100g含77.3g蛋白质，供能比83%。", "contraindications": "不适用于非目标人群、肠外营养、对大豆及乳制品过敏者，不能作为单一营养来源。", "special_additions": "", "energy_density": 0.0, "nut_protein_g": 4.9, "nut_energy_kJ": 100.0, "net_weight": "280g等", "admin_route": "口服"}, {"reg_no": "国食注字TY20205001", "product_name": "特殊医学用途婴儿氨基酸配方食品 恩敏舒", "company": "", "category": "氨基酸配方", "population": "0～12月龄食物蛋白过敏婴儿", "lactose_free": true, "protein_source": "游离氨基酸", "formula_feature": "本品为特殊医学用途婴儿配方食品，配方中蛋白质由游离氨基酸提供，适用于食物蛋白过敏的婴儿。", "contraindications": "请在医生或者临床营养师指导下使用本品。6月龄以上应配合添加辅助食品。", "special_additions": "胆碱、牛磺酸、左旋肉碱、DHA、ARA", "energy_density": 0.67, "nut_protein_g": 1.77, "nut_energy_kJ": 279.0, "net_weight": "400g", "admin_route": "口服"}, {"reg_no": "国食注字TY20210002", "product_name": "特殊医学用途婴儿无乳糖配方食品 葆安素", "company": "", "category": "无乳糖配方", "population": "0～12月龄乳糖不耐受婴儿", "lactose_free": true, "protein_source": "乳清蛋白粉", "formula_feature": "以其他碳水化合物完全代替乳糖，乳糖含量<0.5g/100g，蛋白质由乳蛋白提供，添加了核苷酸。", "contraindications": "请在医生或临床营养师指导下使用，不适用于非目标人群，禁止用于肠外营养支持和静脉注射。", "special_additions": "胆碱、牛磺酸、左旋肉碱、核苷酸", "energy_density": 0.65, "nut_protein_g": 1.58, "nut_energy_kJ": 273.0, "net_weight": "800g，400g", "admin_route": "口服"}, {"reg_no": "国食注字TY20210005", "product_name": "特殊医学用途婴儿无乳糖配方食品 雅舒", "company": "", "category": "无乳糖配方", "population": "0～12月龄乳糖不耐受婴儿", "lactose_free": true, "protein_source": "乳蛋白", "formula_feature": "以其他碳水化合物完全代替乳糖，乳糖含量<0.5g/100g，蛋白质由乳蛋白提供。", "contraindications": "不适用于非目标人群，禁止肠外营养和静脉注射，配制不当可能引起健康危害。", "special_additions": "胆碱、牛磺酸、左旋肉碱", "energy_density": 0.65, "nut_protein_g": 0.52, "nut_energy_kJ": 100.0, "net_weight": "800g", "admin_route": "口服"}, {"reg_no": "国食注字TY20210019", "product_name": "麦孚乐贝", "company": "", "category": "全营养配方食品", "population": "适用于1～10岁进食受限、消化吸收障碍、代谢紊乱需要补充营养的人群。", "lactose_free": false, "protein_source": "水解乳清蛋白粉", "formula_feature": "全营养配方食品，蛋白质来源于水解乳清蛋白粉，添加中链甘油三酯，可作为单一营养来源。", "contraindications": "禁止用于肠外营养支持和静脉注射，不适用于非目标人群，配制不当可能引起健康危害。", "special_additions": "胆碱、牛磺酸、左旋肉碱、DHA、ARA", "energy_density": 1.0, "nut_protein_g": 0.73, "nut_energy_kJ": 100.0, "net_weight": "30g", "admin_route": "口服或管饲"}, {"reg_no": "国食注字TY20220003", "product_name": "爱优诺优安力", "company": "", "category": "无乳糖配方", "population": "0～12月龄乳糖不耐受婴儿", "lactose_free": true, "protein_source": "乳蛋白", "formula_feature": "无乳糖配方，适用于乳糖不耐受婴儿，以其他碳水化合物完全代替乳糖，含核苷酸。", "contraindications": "非目标人群禁用，禁止肠外营养支持和静脉注射，牛奶蛋白过敏者慎用。", "special_additions": "胆碱、牛磺酸、左旋肉碱、核苷酸", "energy_density": 0.67, "nut_protein_g": 1.23, "nut_energy_kJ": 222.2, "net_weight": "400g，800g", "admin_route": "口服"}, {"reg_no": "国食注字TY20220005", "product_name": "特爱启瑞", "company": "", "category": "全营养配方食品", "population": "10岁以上进食受限、消化吸收障碍、代谢紊乱等需要补充营养的人群。", "lactose_free": true, "protein_source": "分离乳清蛋白粉", "formula_feature": "可作为单一营养来源满足10岁以上人群营养需求，蛋白质、脂肪、碳水化合物供能比分别为16.5%、27.9%、55.6%。", "contraindications": "禁止用于肠外营养支持、静脉注射、半乳糖血症或葡萄糖-半乳糖吸收不良症人群。", "special_additions": "多种维生素矿物质", "energy_density": 1.0, "nut_protein_g": 4.1, "nut_energy_kJ": 418.0, "net_weight": "700g", "admin_route": "口服"}, {"reg_no": "国食注字TY20230005", "product_name": "康素得臻膳", "company": "", "category": "全营养配方食品", "population": "10岁以上进食受限、消化吸收障碍、代谢紊乱等需要补充营养的人群。", "lactose_free": true, "protein_source": "水解乳清蛋白", "formula_feature": "全营养配方，能量密度1kcal/mL，不含乳糖，蛋白质由水解乳清蛋白提供。", "contraindications": "不适用于非目标人群、特定疾病人群、半乳糖血症或葡萄糖-半乳糖吸收不良症人群。", "special_additions": "胆碱、牛磺酸、左旋肉碱", "energy_density": 1.0, "nut_protein_g": 4.29, "nut_energy_kJ": 418.0, "net_weight": "800g", "admin_route": "口服"}, {"reg_no": "国食注字TY20230021", "product_name": "特殊医学用途婴儿无乳糖配方食品 特爱瑞安", "company": "", "category": "无乳糖配方", "population": "0～12月龄乳糖不耐受婴儿", "lactose_free": true, "protein_source": "分离乳清蛋白粉", "formula_feature": "适合乳糖不耐受婴儿食用的无乳糖配方食品，乳糖含量≤0.5g/100g，添加了DHA、ARA、核苷酸。", "contraindications": "仅适用于0-12月龄乳糖不耐受婴儿，需在医生或临床营养师指导下使用。", "special_additions": "DHA、ARA、核苷酸、胆碱、牛磺酸、左旋肉碱", "energy_density": 0.0, "nut_protein_g": 1.7, "nut_energy_kJ": 275.0, "net_weight": "", "admin_route": "口服"}, {"reg_no": "国食注字TY20230022", "product_name": "特殊医学用途全营养配方食品 安能", "company": "", "category": "全营养配方食品", "population": "10岁以上进食受限、消化吸收障碍、代谢紊乱等需要补充营养的人群。", "lactose_free": true, "protein_source": "酪蛋白和乳清蛋白", "formula_feature": "全营养配方，能量密度1.2kcal/mL，蛋白质供能20%，脂肪27%，碳水化合物53%。", "contraindications": "不适用于非目标人群，禁止肠外营养和静脉注射。", "special_additions": "胆碱、牛磺酸、左旋肉碱", "energy_density": 1.2, "nut_protein_g": 5.85, "nut_energy_kJ": 500.0, "net_weight": "500mL", "admin_route": "口服或管饲"}, {"reg_no": "国食注字TY20230029", "product_name": "特殊医学用途婴儿乳蛋白部分水解配方食品 特爱敏佳", "company": "", "category": "乳蛋白部分水解配方", "population": "0～12月龄乳蛋白过敏高风险婴儿", "lactose_free": true, "protein_source": "水解乳清蛋白粉", "formula_feature": "以水解乳清蛋白粉为蛋白质来源，添加胆碱、左旋肉碱、低聚果糖、核苷酸。", "contraindications": "不适用于非目标人群，禁止肠外营养支持和静脉注射。", "special_additions": "胆碱、左旋肉碱、低聚果糖、核苷酸", "energy_density": 0.7, "nut_protein_g": 1.6, "nut_energy_kJ": 289.0, "net_weight": "700g, 300g", "admin_route": "口服"}, {"reg_no": "国食注字TY20230038", "product_name": "特殊医学用途全营养配方粉 小拜妥优", "company": "", "category": "全营养配方食品", "population": "适用于1～10岁进食受限、消化吸收障碍、代谢紊乱等需要补充营养的人群。", "lactose_free": true, "protein_source": "浓缩乳清蛋白、大豆分离蛋白", "formula_feature": "1-10岁全营养配方粉，蛋白质、脂肪、碳水化合物供能比14%、34%、52%，添加胆碱、牛磺酸、左旋肉碱等。", "contraindications": "肠内营养禁忌、乳蛋白/大豆蛋白过敏、氨基酸代谢障碍、严重肝肾功能障碍者禁用。", "special_additions": "胆碱、肌醇、牛磺酸、左旋肉碱、DHA、ARA", "energy_density": 1.0, "nut_protein_g": 0.8, "nut_energy_kJ": 100.0, "net_weight": "240g至360g", "admin_route": "口服或管饲"}, {"reg_no": "国食注字TY20230045", "product_name": "冬泽力安", "company": "", "category": "非全营养配方食品", "population": "1岁以上特定疾病或医学状况下需要补充蛋白质的人群。", "lactose_free": true, "protein_source": "大豆分离蛋白、分离乳清蛋白粉", "formula_feature": "高蛋白粉状配方，蛋白质含量约88g/100g，适用于需补充蛋白质人群。", "contraindications": "禁用于肠外营养、非目标人群、消化道梗阻、肝肾功能严重障碍及过敏者。", "special_additions": "", "energy_density": 0.66, "nut_protein_g": 10.0, "nut_energy_kJ": 997.33, "net_weight": "103.2g起多规格", "admin_route": "口服"}, {"reg_no": "国食注字TY20230050", "product_name": "特殊医学用途婴儿低乳糖配方食品 能盾", "company": "", "category": "低乳糖配方", "population": "0～12月龄乳糖不耐受婴儿", "lactose_free": true, "protein_source": "乳蛋白", "formula_feature": "以其他碳水化合物部分替代乳糖，乳糖含量＜2g/100g，蛋白质由乳蛋白提供。", "contraindications": "不适用于非目标人群，禁止肠外营养支持和静脉注射，配制不当可能引起健康危害。", "special_additions": "胆碱、左旋肉碱、肌醇、核苷酸", "energy_density": 0.67, "nut_protein_g": 0.55, "nut_energy_kJ": 100.0, "net_weight": "400g", "admin_route": "口服"}, {"reg_no": "国食注字TY20230054", "product_name": "特殊医学用途婴儿无乳糖配方食品 嘉复褓", "company": "", "category": "无乳糖配方", "population": "0～12月龄乳糖不耐受婴儿", "lactose_free": true, "protein_source": "乳蛋白", "formula_feature": "无乳糖配方，以其他碳水化合物完全代替乳糖，蛋白质由乳蛋白提供，含核苷酸。", "contraindications": "请在医生或临床营养师指导下使用，不适用于非目标人群，禁止肠外营养支持和静脉注射。", "special_additions": "胆碱、牛磺酸、核苷酸、DHA、ARA", "energy_density": 1.33, "nut_protein_g": 1.62, "nut_energy_kJ": 279.0, "net_weight": "400g", "admin_route": "口服"}, {"reg_no": "国食注字TY20230062", "product_name": "冬泽力太", "company": "", "category": "非全营养配方食品", "population": "10岁以上特定疾病或医学状况下需要补充蛋白质的人群。", "lactose_free": true, "protein_source": "大豆肽粉、水解乳清蛋白粉", "formula_feature": "高蛋白、无乳糖、粉状，适用于需补充蛋白质的特定人群。", "contraindications": "禁用于肠外营养、静脉注射、氨基酸代谢障碍人群，不可作为单一营养来源。", "special_additions": "", "energy_density": 1.1, "nut_protein_g": 10.0, "nut_energy_kJ": 126.3, "net_weight": "150g至300g", "admin_route": "口服或管饲"}, {"reg_no": "国食注字TY20230063", "product_name": "德瑞太®", "company": "", "category": "全营养配方食品", "population": "10岁以上进食受限、消化吸收障碍、代谢紊乱等需要补充营养的人群。", "lactose_free": true, "protein_source": "水解乳清蛋白粉", "formula_feature": "全营养配方，能量密度1.0kcal/mL，含水解乳清蛋白与MCT，膳食纤维含量低。", "contraindications": "不适用于肠内营养禁忌、半乳糖血症患者，禁止肠外或静脉注射。", "special_additions": "胆碱、叶酸等多种维生素矿物质", "energy_density": 1.0, "nut_protein_g": 4.65, "nut_energy_kJ": 419.0, "net_weight": "200mL，500mL", "admin_route": "口服或管饲"}, {"reg_no": "国食注字TY20230065", "product_name": "特殊医学用途蛋白质组件配方食品 力优宜", "company": "", "category": "蛋白质（氨基酸）组件", "population": "10岁以上特定疾病或医学状况下需要补充蛋白质的人群。", "lactose_free": true, "protein_source": "乳清蛋白粉", "formula_feature": "高蛋白、低糖，乳清蛋白为主要来源，适用于需补充蛋白质的特定人群。", "contraindications": "不适用于非目标人群、对乳及其制品过敏者，禁止肠外营养和静脉注射。", "special_additions": "", "energy_density": 1.0, "nut_protein_g": 5.45, "nut_energy_kJ": 100.0, "net_weight": "260g等多规格", "admin_route": "口服或管饲"}, {"reg_no": "国食注字TY20240015", "product_name": "特殊医学用途婴儿无乳糖配方食品 怡安消", "company": "", "category": "无乳糖配方", "population": "0～12月乳糖不耐受婴儿", "lactose_free": true, "protein_source": "乳蛋白", "formula_feature": "特殊医学用途婴儿无乳糖配方食品，蛋白来源为乳蛋白，含多种维生素和矿物质，适用于乳糖不耐受婴儿。", "contraindications": "请在医生或临床营养师指导下使用，不适用于非目标人群，禁止肠外营养支持和静脉注射。", "special_additions": "胆碱、牛磺酸、左旋肉碱、叶黄素、核苷酸", "energy_density": 1.0, "nut_protein_g": 1.56, "nut_energy_kJ": 273.0, "net_weight": "565g", "admin_route": "口服"}, {"reg_no": "国食注字TY20240017", "product_name": "德瑞清", "company": "", "category": "非全营养配方食品", "population": "10岁以上需要限制脂肪摄入、消化吸收障碍等医学状况下的人群。", "lactose_free": true, "protein_source": "乳清蛋白", "formula_feature": "本品为非全营养配方食品，碳水化合物来源为淀粉糖和白砂糖，蛋白质来源为乳清蛋白。", "contraindications": "不适用于半乳糖血症、先天无法代谢本品中所含营养素的患者，禁止肠外营养支持和静脉注射。", "special_additions": "胆碱、牛磺酸、左旋肉碱等", "energy_density": 1.5, "nut_protein_g": 4.0, "nut_energy_kJ": 627.0, "net_weight": "200mL", "admin_route": "口服"}, {"reg_no": "国食注字TY20240018", "product_name": "冬泽益全", "company": "", "category": "全营养配方食品", "population": "10岁以上进食受限、消化吸收障碍、代谢紊乱等需要补充营养的人群。", "lactose_free": true, "protein_source": "酪蛋白、大豆分离蛋白", "formula_feature": "全营养配方食品，含牛磺酸和低聚果糖，提供均衡营养。", "contraindications": "不适用于非目标人群，禁止肠外营养和静脉注射。", "special_additions": "牛磺酸、低聚果糖", "energy_density": 1.0, "nut_protein_g": 4.0, "nut_energy_kJ": 422.0, "net_weight": "500mL", "admin_route": "口服或管饲"}, {"reg_no": "国食注字TY20240019", "product_name": "冬泽力亮", "company": "", "category": "非全营养配方食品", "population": "10岁以上特定疾病或医学状况下需要补充蛋白质的人群。", "lactose_free": true, "protein_source": "大豆肽粉、水解乳清蛋白粉", "formula_feature": "以大豆肽粉和水解乳清蛋白粉为蛋白源，蛋白质含量约10.0g/100mL，适用于需补充蛋白质人群。", "contraindications": "禁止肠外营养及静脉注射，不可作为单一营养来源，需在医生或营养师指导下使用。", "special_additions": "", "energy_density": 0.43, "nut_protein_g": 10.0, "nut_energy_kJ": 180.0, "net_weight": "200mL", "admin_route": "口服"}, {"reg_no": "国食注字TY20190008", "product_name": "优博启瑞", "company": "", "category": "全营养配方食品", "population": "适用于10岁以上进食受限、消化吸收障碍、代谢紊乱需要进行营养补充的人群。", "lactose_free": true, "protein_source": "乳清蛋白", "formula_feature": "全营养配方，含乳清蛋白，无乳糖，能量密度1kcal/mL，适用于10岁以上人群。", "contraindications": "禁用于肠外营养支持、静脉注射、半乳糖血症或葡萄糖-半乳糖吸收不良症人群。", "special_additions": "胆碱、牛磺酸、左旋肉碱等多种维生素矿物质", "energy_density": 1.0, "nut_protein_g": 4.1, "nut_energy_kJ": 418.0, "net_weight": "700g", "admin_route": "口服"}, {"reg_no": "国食注字TY20195002", "product_name": "特殊医学用途婴儿乳蛋白部分水解配方食品 超启能恩 NAN H.A.", "company": "", "category": "乳蛋白部分水解配方", "population": "0～12月龄乳蛋白过敏高风险婴儿", "lactose_free": true, "protein_source": "乳清蛋白粉", "formula_feature": "采用蛋白酶水解工艺，乳清蛋白分解为小分子肽段和氨基酸，添加动物双歧杆菌乳亚种Bb-12。", "contraindications": "请在医生或临床营养师指导下使用，不适用于非目标人群，禁用于肠外营养支持和静脉注射。", "special_additions": "胆碱、牛磺酸、左旋肉碱、DHA、ARA、益生菌Bb-12", "energy_density": 0.0, "nut_protein_g": 1.27, "nut_energy_kJ": 280.0, "net_weight": "800g，400g，380g", "admin_route": "口服"}, {"reg_no": "国食注字TY20230235001", "product_name": "特殊医学用途婴儿乳蛋白深度水解配方食品", "company": "", "category": "乳蛋白深度水解配方", "population": "0～12月龄食物蛋白过敏婴儿", "lactose_free": true, "protein_source": "浓缩乳清蛋白粉", "formula_feature": "乳蛋白深度水解，添加MCT，适用于0-12月龄食物蛋白过敏婴儿。", "contraindications": "禁止用于肠外营养支持和静脉注射，不适用于非目标人群。", "special_additions": "胆碱、牛磺酸、左旋肉碱、DHA、AA", "energy_density": 1.0, "nut_protein_g": 1.8, "nut_energy_kJ": 280.24, "net_weight": "450g", "admin_route": "口服"}, {"reg_no": "国食注字TY20235002", "product_name": "特殊医学用途婴儿乳蛋白部分水解配方食品 启赋®敏适", "company": "", "category": "乳蛋白部分水解配方", "population": "0～12月龄乳蛋白过敏高风险婴儿", "lactose_free": true, "protein_source": "乳清蛋白粉", "formula_feature": "采用水解工艺，乳清蛋白分解为小分子肽段和氨基酸，适合乳蛋白过敏高风险婴儿。", "contraindications": "不适用于非目标人群，禁止肠外营养支持和静脉注射。", "special_additions": "胆碱、牛磺酸、左旋肉碱、DHA、ARA", "energy_density": 0.67, "nut_protein_g": 0.45, "nut_energy_kJ": 100.0, "net_weight": "350g至800g", "admin_route": "口服"}, {"reg_no": "国食注字TY20230051", "product_name": "益诺安", "company": "", "category": "全营养配方食品", "population": "10岁以上进食受限、消化吸收障碍、代谢紊乱等需要补充营养的人群。", "lactose_free": true, "protein_source": "脱脂羊乳粉和大豆分离蛋白", "formula_feature": "全营养配方，含多种维生素矿物质，无乳糖，可作为单一营养来源。", "contraindications": "不适用于非目标人群，禁用于肠外营养支持和静脉注射。", "special_additions": "胆碱、牛磺酸、左旋肉碱", "energy_density": 1.0, "nut_protein_g": 3.96, "nut_energy_kJ": 420.0, "net_weight": "400g", "admin_route": "口服"}, {"reg_no": "国食注字TY20240013", "product_name": "特殊医学用途婴儿乳蛋白部分水解配方食品 恬适康敏", "company": "", "category": "乳蛋白部分水解配方", "population": "0～12月龄乳蛋白过敏高风险婴儿", "lactose_free": true, "protein_source": "水解乳清蛋白粉", "formula_feature": "特殊医学用途婴儿乳蛋白部分水解配方食品，蛋白来源为水解乳清蛋白粉，添加DHA、ARA、低聚果糖、叶黄素、核苷酸。", "contraindications": "仅适用于0～12月龄乳蛋白过敏高风险婴儿，需在医生或临床营养师指导下使用。", "special_additions": "胆碱、牛磺酸、左旋肉碱、DHA、ARA、低聚果糖、叶黄素、核苷酸", "energy_density": 0.66, "nut_protein_g": 1.51, "nut_energy_kJ": 273.0, "net_weight": "565g", "admin_route": "口服"}, {"reg_no": "国食注字TY20245001", "product_name": "特殊医学用途婴儿乳蛋白部分水解配方食品 爱他美亲熠", "company": "", "category": "乳蛋白部分水解配方", "population": "0～12月龄乳蛋白过敏高风险婴儿", "lactose_free": false, "protein_source": "乳清蛋白粉", "formula_feature": "乳蛋白部分水解，添加低聚半乳糖、多聚果糖、短双歧杆菌M-16V，适合乳蛋白过敏高风险婴儿。", "contraindications": "不适用于非目标人群，禁止肠外营养支持和静脉注射。", "special_additions": "胆碱、牛磺酸、左旋肉碱、益生菌M-16V", "energy_density": 0.0, "nut_protein_g": 1.43, "nut_energy_kJ": 271.0, "net_weight": "900g", "admin_route": "口服"}, {"reg_no": "国食注字TY20230043", "product_name": "小佳膳汇立能", "company": "", "category": "全营养配方食品", "population": "1-10岁进食受限、消化吸收障碍、代谢紊乱等需要补充营养的人群。", "lactose_free": false, "protein_source": "浓缩牛奶蛋白、乳清蛋白粉", "formula_feature": "全营养配方，含乳清蛋白、MCT、膳食纤维及多种维生素矿物质，可作为单一营养来源。", "contraindications": "禁止肠外营养支持和静脉注射，不适用于非目标人群。", "special_additions": "胆碱、牛磺酸、左旋肉碱、DHA", "energy_density": 1.0, "nut_protein_g": 3.5, "nut_energy_kJ": 422.0, "net_weight": "250mL", "admin_route": "口服或管饲喂养"}]`);
+
+// ── STATE ──────────────────────────────────────────────────────────────────────
+let selectedConditions = new Set();
+let currentResults = [];
+let currentSortKey = 'score';
+
+// ── TAGS ──────────────────────────────────────────────────────────────────────
+document.querySelectorAll('.tag-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const v = btn.dataset.val;
+    if (selectedConditions.has(v)) {
+      selectedConditions.delete(v);
+      btn.classList.remove('active');
+    } else {
+      selectedConditions.add(v);
+      btn.classList.add('active');
+    }
+  });
+});
+
+// ── PRESETS ───────────────────────────────────────────────────────────────────
+function loadPreset(n) {
+  // Reset
+  selectedConditions.clear();
+  document.querySelectorAll('.tag-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('extraNote').value = '';
+
+  if (n === 1) {
+    document.getElementById('ageGroup').value = 'infant';
+    ['protein_allergy'].forEach(v => {
+      selectedConditions.add(v);
+      document.querySelector(`.tag-btn[data-val="${v}"]`).classList.add('active');
+    });
+  } else if (n === 2) {
+    document.getElementById('ageGroup').value = 'child_1_10';
+    ['need_protein', 'lactose_intolerant'].forEach(v => {
+      selectedConditions.add(v);
+      document.querySelector(`.tag-btn[data-val="${v}"]`).classList.add('active');
+    });
+    document.getElementById('extraNote').value = '10岁儿童';
+  }
+  doRecommend();
+}
+
+// ── SCORING ENGINE ────────────────────────────────────────────────────────────
+function scoreProduct(p, age, conditions, note) {
+  let score = 0;
+  const pop = (p.population || '').toLowerCase();
+  const cat = (p.category || '').toLowerCase();
+  const feat = (p.formula_feature || '').toLowerCase();
+  const contra = (p.contraindications || '').toLowerCase();
+
+  // Age matching
+  if (age === 'infant') {
+    if (pop.includes('婴儿') && !pop.includes('早产')) score += 40;
+    else if (pop.includes('早产')) score -= 10;
+    else score -= 30;
+  } else if (age === 'preterm') {
+    if (pop.includes('早产')) score += 40;
+    else score -= 30;
+  } else if (age === 'child_1_10') {
+    if (pop.includes('1-10') || pop.includes('1～10') || pop.includes('1岁') || pop.includes('消化吸收不足造成营养不良的1')) score += 40;
+    else if (pop.includes('10岁以上') || pop.includes('10岁以上')) score += 10;
+    else if (pop.includes('婴儿')) score -= 30;
+    else score += 5;
+  } else if (age === 'child_10_plus') {
+    if (pop.includes('10岁以上')) score += 40;
+    else if (pop.includes('婴儿')) score -= 30;
+    else score += 5;
+  } else if (age === 'adult_50plus') {
+    if (pop.includes('50岁以上')) score += 50;
+    else if (pop.includes('10岁以上') || pop.includes('18岁以上')) score += 30;
+    else if (pop.includes('婴儿')) score -= 30;
+  } else if (age === 'adult') {
+    if (pop.includes('18岁以上') || pop.includes('10岁以上')) score += 35;
+    else if (pop.includes('婴儿')) score -= 30;
+  }
+
+  // Condition matching
+  if (conditions.has('protein_allergy')) {
+    if (cat.includes('氨基酸配方')) score += 35;
+    else if (cat.includes('深度水解')) score += 30;
+    else if (cat.includes('部分水解')) score += 20;
+    else if (pop.includes('蛋白过敏') || pop.includes('食物蛋白')) score += 30;
+    else if (feat.includes('水解') || feat.includes('过敏')) score += 15;
+  }
+
+  if (conditions.has('lactose_intolerant')) {
+    if (p.lactose_free) score += 30;
+    else score -= 15;
+    if (cat.includes('无乳糖') || cat.includes('低乳糖')) score += 15;
+    if (pop.includes('乳糖不耐受')) score += 15;
+  }
+
+  if (conditions.has('need_protein')) {
+    if (cat.includes('蛋白质') || cat.includes('氨基酸')) score += 25;
+    if (pop.includes('蛋白质')) score += 20;
+    if (p.nut_protein_g > 5) score += 10;
+    if (p.nut_protein_g > 8) score += 10;
+  }
+
+  if (conditions.has('poor_nutrition')) {
+    if (cat.includes('全营养')) score += 25;
+    if (pop.includes('营养') || feat.includes('全营养')) score += 15;
+  }
+
+  if (conditions.has('dehydration')) {
+    if (cat.includes('电解质')) score += 35;
+    if (pop.includes('脱水') || pop.includes('腹泻')) score += 20;
+  }
+
+  if (conditions.has('preop')) {
+    if (pop.includes('术前')) score += 35;
+    if (cat.includes('碳水化合物')) score += 20;
+  }
+
+  if (conditions.has('swallowing')) {
+    if (pop.includes('吞咽')) score += 35;
+    if (cat.includes('增稠')) score += 30;
+  }
+
+  if (conditions.has('tumor')) {
+    if (pop.includes('肿瘤')) score += 40;
+    if (cat.includes('特定全营养')) score += 20;
+  }
+
+  if (conditions.has('pku')) {
+    if (pop.includes('苯丙酮') || cat.includes('氨基酸代谢')) score += 45;
+  }
+
+  // Note text matching
+  if (note) {
+    const n = note.toLowerCase();
+    if (n.includes('管饲') && p.admin_route.includes('管饲')) score += 8;
+    if (n.includes('婴儿') && pop.includes('婴儿')) score += 10;
+    if (n.includes('蛋白') && (p.nut_protein_g > 3 || cat.includes('蛋白'))) score += 8;
+  }
+
+  // Penalty: contraindications conflict
+  if (conditions.has('lactose_intolerant') && contra.includes('乳糖不耐')) score -= 25;
+  if (conditions.has('protein_allergy') && contra.includes('乳蛋白过敏') && !cat.includes('水解') && !cat.includes('氨基酸')) score -= 20;
+
+  return Math.max(0, score);
+}
+
+function getMatchReasons(p, age, conditions) {
+  const reasons = [];
+  const pop = p.population || '';
+  const cat = p.category || '';
+
+  if (age === 'infant' && pop.includes('婴儿')) reasons.push('适龄婴儿配方');
+  if (age === 'child_1_10' && (pop.includes('1-10') || pop.includes('1～10'))) reasons.push('1-10岁儿童适用');
+  if (age === 'child_10_plus' && pop.includes('10岁以上')) reasons.push('10岁以上适用');
+  if (age === 'preterm' && pop.includes('早产')) reasons.push('早产儿专用');
+
+  if (conditions.has('protein_allergy') && (cat.includes('氨基酸') || cat.includes('水解'))) reasons.push('适用蛋白过敏');
+  if (conditions.has('lactose_intolerant') && p.lactose_free) reasons.push('无乳糖配方');
+  if (conditions.has('need_protein') && (cat.includes('蛋白质') || p.nut_protein_g > 5)) reasons.push('高蛋白补充');
+  if (conditions.has('tumor') && pop.includes('肿瘤')) reasons.push('肿瘤营养专用');
+  if (conditions.has('pku') && (pop.includes('苯丙酮') || cat.includes('氨基酸代谢'))) reasons.push('PKU专用配方');
+
+  return reasons;
+}
+
+// ── RECOMMEND ─────────────────────────────────────────────────────────────────
+function doRecommend() {
+  const age = document.getElementById('ageGroup').value;
+  const note = document.getElementById('extraNote').value.trim();
+
+  if (!age && selectedConditions.size === 0) {
+    alert('请至少选择年龄段或症状。');
+    return;
+  }
+
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('resultsContent').style.display = 'block';
+  document.getElementById('resultsContent').innerHTML = `
+    <div class="loading">
+      <div class="spinner"></div>
+      <div style="font-family:'DM Mono',monospace;font-size:12px;color:var(--ink-30);letter-spacing:0.1em">ANALYZING DATABASE</div>
+    </div>`;
+
+  setTimeout(() => {
+    const scored = PRODUCTS.map(p => ({
+      ...p,
+      _score: scoreProduct(p, age, selectedConditions, note),
+      _reasons: getMatchReasons(p, age, selectedConditions)
+    })).filter(p => p._score > 0).sort((a, b) => b._score - a._score);
+
+    currentResults = scored;
+    renderResults(scored, age, note);
+  }, 400);
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+const AGE_LABELS = {
+  infant: '婴儿（0～12 月龄）',
+  preterm: '早产 / 低出生体重婴儿',
+  child_1_10: '儿童（1～10 岁）',
+  child_10_plus: '儿童青少年（10 岁以上）',
+  adult_50plus: '成人（50 岁以上）',
+  adult: '成人（18 岁以上）',
+  '': '未指定年龄',
+};
+const COND_LABELS = {
+  protein_allergy: '蛋白质过敏',
+  lactose_intolerant: '乳糖不耐受',
+  need_protein: '补充蛋白质',
+  poor_nutrition: '营养不良',
+  dehydration: '脱水/腹泻',
+  preop: '术前补充',
+  swallowing: '吞咽障碍',
+  tumor: '肿瘤患者',
+  pku: '苯丙酮尿症',
+};
+
+function renderResults(results, age, note) {
+  const ageLabel = AGE_LABELS[age] || age;
+  const condList = [...selectedConditions].map(c => COND_LABELS[c]).filter(Boolean).join('、');
+  const maxScore = results[0]?._score || 1;
+
+  let html = `
+    <div class="results-header">
+      <div>
+        <div class="results-count">${results.length}
+          <span>款匹配产品 · 共检索 ${PRODUCTS.length} 款</span>
+        </div>
+      </div>
+      <div class="results-patient">
+        <strong>${ageLabel}</strong>
+        ${condList || '无特定症状'}
+      </div>
+    </div>
+
+    <div class="notice">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      本推荐结果仅供参考，实际使用须在医生或临床营养师指导下进行。
+    </div>
+
+    <div class="sort-bar">
+      <span class="sort-label">排序</span>
+      <button class="sort-btn ${currentSortKey==='score'?'active':''}" onclick="resortBy('score')">综合匹配</button>
+      <button class="sort-btn ${currentSortKey==='protein'?'active':''}" onclick="resortBy('protein')">蛋白质含量</button>
+      <button class="sort-btn ${currentSortKey==='energy'?'active':''}" onclick="resortBy('energy')">能量密度</button>
+    </div>
+
+    <div class="card-list">`;
+
+  results.forEach((p, i) => {
+    const rankClass = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : '';
+    const pct = Math.round((p._score / maxScore) * 100);
+    const proteinDisplay = p.nut_protein_g > 0 ? `${p.nut_protein_g}g/100mL` : '—';
+    const energyDisplay = p.nut_energy_kJ > 0 ? `${p.nut_energy_kJ}kJ/100mL` : '—';
+
+    let badges = `<span class="badge badge-category">${p.category}</span>`;
+    if (p.lactose_free) badges += `<span class="badge badge-lactose">无乳糖</span>`;
+    if (p._reasons.includes('适用蛋白过敏') || p.category.includes('氨基酸') || p.category.includes('水解'))
+      badges += `<span class="badge badge-allergy">低致敏</span>`;
+    if (p.nut_protein_g > 5) badges += `<span class="badge badge-protein">高蛋白</span>`;
+
+    html += `
+      <div class="product-card ${rankClass}" onclick="openModal(${i})">
+        <div class="card-top">
+          <div class="card-name">${p.product_name}${p.company ? ` <span style="color:var(--ink-60);font-size:13px">· ${p.company}</span>` : ''}</div>
+          <div class="card-rank">${String(i+1).padStart(2,'0')}</div>
+        </div>
+        <div class="card-reg">${p.reg_no}</div>
+        <div class="score-row">
+          <span class="score-label">匹配度</span>
+          <div class="score-bar"><div class="score-fill" style="width:${pct}%"></div></div>
+          <span class="score-num">${pct}%</span>
+        </div>
+        <div class="card-badges">${badges}</div>
+        <div class="card-body">${p.formula_feature ? p.formula_feature.substring(0, 90) + (p.formula_feature.length > 90 ? '…' : '') : '—'}</div>
+        <div class="card-footer">
+          <div class="card-stat">
+            <span class="card-stat-label">适用人群</span>
+            <span class="card-stat-value" style="font-size:12px">${p.population.length > 20 ? p.population.substring(0,20)+'…' : p.population}</span>
+          </div>
+          <div class="card-stat">
+            <span class="card-stat-label">蛋白质</span>
+            <span class="card-stat-value">${proteinDisplay}</span>
+          </div>
+          <div class="card-stat">
+            <span class="card-stat-label">给药途径</span>
+            <span class="card-stat-value">${p.admin_route || '—'}</span>
+          </div>
+          <div class="card-stat">
+            <span class="card-stat-label">规格</span>
+            <span class="card-stat-value" style="font-size:12px">${p.net_weight ? (p.net_weight.length > 12 ? p.net_weight.substring(0,12)+'…' : p.net_weight) : '—'}</span>
+          </div>
+        </div>
+      </div>`;
+  });
+
+  html += '</div>';
+  document.getElementById('resultsContent').innerHTML = html;
+}
+
+function resortBy(key) {
+  currentSortKey = key;
+  let sorted;
+  if (key === 'protein') {
+    sorted = [...currentResults].sort((a,b) => b.nut_protein_g - a.nut_protein_g);
+  } else if (key === 'energy') {
+    sorted = [...currentResults].sort((a,b) => b.nut_energy_kJ - a.nut_energy_kJ);
+  } else {
+    sorted = [...currentResults];
+  }
+  const age = document.getElementById('ageGroup').value;
+  renderResults(sorted, age, '');
+}
+
+// ── MODAL ─────────────────────────────────────────────────────────────────────
+function openModal(idx) {
+  const p = currentResults[idx];
+  if (!p) return;
+
+  const proteinDisplay = p.nut_protein_g > 0 ? p.nut_protein_g + ' g/100mL' : '—';
+  const energyDisplay  = p.nut_energy_kJ > 0 ? p.nut_energy_kJ + ' kJ/100mL' : '—';
+
+  document.getElementById('modalContent').innerHTML = `
+    <div class="modal-title">${p.product_name}</div>
+    <div class="modal-reg">${p.reg_no}${p.company ? ' · ' + p.company : ''}</div>
+
+    <div class="modal-stats">
+      <div class="modal-stat-item">
+        <div class="modal-stat-n">${proteinDisplay !== '—' ? p.nut_protein_g : '—'}</div>
+        <div class="modal-stat-u">${proteinDisplay !== '—' ? 'g/100mL' : ''}</div>
+        <div class="modal-stat-l">蛋白质</div>
+      </div>
+      <div class="modal-stat-item">
+        <div class="modal-stat-n">${energyDisplay !== '—' ? p.nut_energy_kJ : '—'}</div>
+        <div class="modal-stat-u">${energyDisplay !== '—' ? 'kJ/100mL' : ''}</div>
+        <div class="modal-stat-l">能量</div>
+      </div>
+      <div class="modal-stat-item">
+        <div class="modal-stat-n">${p.lactose_free ? '无' : '有'}</div>
+        <div class="modal-stat-u"></div>
+        <div class="modal-stat-l">乳糖</div>
+      </div>
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-title">适用人群</div>
+      <div class="modal-text">${p.population || '—'}</div>
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-title">配方特点</div>
+      <div class="modal-text">${p.formula_feature || '—'}</div>
+    </div>
+
+    ${p.protein_source ? `
+    <div class="modal-section">
+      <div class="modal-section-title">蛋白质来源</div>
+      <div class="modal-text">${p.protein_source}</div>
+    </div>` : ''}
+
+    ${p.special_additions ? `
+    <div class="modal-section">
+      <div class="modal-section-title">特殊添加成分</div>
+      <div class="modal-text">${p.special_additions}</div>
+    </div>` : ''}
+
+    <div class="modal-section">
+      <div class="modal-section-title">禁忌与注意事项</div>
+      <div class="modal-text" style="color:#c8503c">${p.contraindications || '—'}</div>
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-title">规格 / 给药途径</div>
+      <div class="modal-text">${p.net_weight || '—'} · ${p.admin_route || '—'}</div>
+    </div>
+  `;
+
+  document.getElementById('modalOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal(e) {
+  if (e && e.target !== document.getElementById('modalOverlay') && e.type !== 'click') return;
+  if (e && e.currentTarget !== e.target && e.type === 'click' && e.target !== document.getElementById('modalOverlay')) return;
+  document.getElementById('modalOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+document.querySelector('.modal-close').addEventListener('click', () => {
+  document.getElementById('modalOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.getElementById('modalOverlay').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+});
+</script>
+</body>
+</html>
